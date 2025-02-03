@@ -18,6 +18,7 @@ interface Pixel {
     x: number;
     y: number;
     color: string;
+    username: string;
 }
 
 interface IncomingMessage {
@@ -28,6 +29,9 @@ interface IncomingMessage {
 router.ws('/canvas', (ws, _req) => {
     connectedClients.push(ws);
     console.log('client connected. Clients total:', connectedClients.length);
+
+    let username = 'Anonymous';
+
     ws.send(JSON.stringify({
         type: 'DEFAULT_PIXELS',
         payload: pixels
@@ -37,15 +41,15 @@ router.ws('/canvas', (ws, _req) => {
         try {
             const decodedMessage = JSON.parse(message.toString()) as IncomingMessage;
 
-            if (decodedMessage.type === 'SET_PIXELS') {
-                const {x, y, color} = decodedMessage.payload as Pixel;
-
-                pixels.push({x, y, color});
-
+            if (decodedMessage.type === 'SET_USERNAME') {
+                username = decodedMessage.payload.toString();
+            } else if (decodedMessage.type === 'SET_PIXELS') {
+                const { x, y, color } = decodedMessage.payload as Pixel;
+                pixels.push({ x, y, color, username });
                 connectedClients.forEach(clientWS => {
                     clientWS.send(JSON.stringify({
                         type: 'NEW_PIXEL',
-                        payload: {x, y, color}
+                        payload: {x, y, color, username}
                     }));
                 });
             }
